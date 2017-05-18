@@ -100,6 +100,26 @@ int main() {
           */
           double steer_value;
           double throttle_value;
+          Eigen::VectorXd ptsxXD = Eigen::VectorXd::Map(ptsx.data(), ptsx.size());;
+          Eigen::VectorXd ptsyXD = Eigen::VectorXd::Map(ptsy.data(), ptsy.size());;
+
+//          for(auto pts:ptsx){
+//        	  ptsxXD<<pts;
+//          }
+//          for(auto pts:ptsy){
+//        	  ptsyXD<<pts;
+//          }
+
+          auto coeffs = polyfit(ptsxXD, ptsyXD, 3);
+          double cte = polyeval(coeffs, px) - py;
+          double epsi = psi - atan(coeffs[1] + coeffs[2] * 2 * px + coeffs[3] * 3 * pow(px, 2));
+
+          Eigen::VectorXd state(6);
+          state << px, py, psi, v, cte, epsi;
+
+          auto vars = mpc.Solve(state, coeffs);
+          steer_value = vars[6];
+          throttle_value = vars[7];
 
           json msgJson;
           msgJson["steering_angle"] = steer_value;
