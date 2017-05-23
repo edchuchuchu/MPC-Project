@@ -6,7 +6,7 @@
 using CppAD::AD;
 
 // Set the timestep length and duration
-size_t N = 25;
+size_t N = 15;
 double dt = 0.05;
 
 // This value assumes the model presented in the classroom is used.
@@ -25,7 +25,7 @@ const double Lf = 2.67;
 // The reference velocity is set to 40 mph.
 double ref_cte = 0;
 double ref_epsi = 0;
-double ref_v = 40;
+double ref_v = 50;
 
 // The solver takes all the state variables and actuator
 // variables in a singular vector. Thus, we should to establish
@@ -71,7 +71,7 @@ class FG_eval {
 	// Minimize the value gap between sequential actuations.
 	for (int i = 0; i < N - 2; i++) {
 	  fg[0] += 500 * CppAD::pow(vars[delta_start + i + 1] - vars[delta_start + i], 2);
-	  fg[0] += CppAD::pow(vars[a_start + i + 1] - vars[a_start + i], 2);
+	  fg[0] += 50 * CppAD::pow(vars[a_start + i + 1] - vars[a_start + i], 2);
 	}
 
 	//
@@ -144,7 +144,7 @@ class FG_eval {
 MPC::MPC() {}
 MPC::~MPC() {}
 
-vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
+vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs, vector<double>& mpc_x_vals, vector<double>& mpc_y_vals) {
   bool ok = true;
   size_t i;
   typedef CPPAD_TESTVECTOR(double) Dvector;
@@ -263,14 +263,25 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   auto cost = solution.obj_value;
   std::cout << "Cost " << cost << std::endl;
 
+  // Updated MPC predicted trajectory
+  for (unsigned int i=0; i <N; ++i) {
+      mpc_x_vals.push_back(solution.x[x_start + i]);
+	  mpc_y_vals.push_back(solution.x[y_start + i]);
+  }
+
   // Return the first actuator values. The variables can be accessed with
   // `solution.x[i]`.
   //
   // {...} is shorthand for creating a vector, so auto x1 = {1.0,2.0}
   // creates a 2 element double vector.
+
   // return {};
-  return {solution.x[x_start + 1],   solution.x[y_start + 1],
-          solution.x[psi_start + 1], solution.x[v_start + 1],
-          solution.x[cte_start + 1], solution.x[epsi_start + 1],
-          solution.x[delta_start],   solution.x[a_start]};
+
+  // return {solution.x[x_start + 1],   solution.x[y_start + 1],
+  //         solution.x[psi_start + 1], solution.x[v_start + 1],
+  //         solution.x[cte_start + 1], solution.x[epsi_start + 1],
+  //        solution.x[delta_start],   solution.x[a_start]};
+
+  // only return the necessary info
+  return {solution.x[delta_start],   solution.x[a_start]};
 }
