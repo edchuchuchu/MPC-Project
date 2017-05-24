@@ -3,31 +3,89 @@ Self-Driving Car Engineer Nanodegree Program
 
 ---
 
+[//]: # (Image References)
+
+[image1]: ./output_imgs/output4.png "Result"
+
+![alt text][image1]
+
 ## Implementation
 
 ### The Model
 
-Student describes their model in detail. This includes the state, actuators and update equations.
+Global Kinematic Model which is simplifications of dynamic models that ignore tire forces, gravity, and mass.
+This simplification reduces the accuracy of the models, but it also makes them more tractable.
+ 
+It includes following state, actuators and update equations.
 
+State: [x,y,ψ,v]
+x,y for vehicle position
+ψ for vehicle orientation
+v for vehicle velocity
+
+Actuators: [δ,a]
+δ for steering angle.
+a for acceleration (throttle/brake combined).
+
+Update equations:
+
+x_[t+1] = x[t] + v[t] * cos(ψ[t]) * dt
+y_[t+1] = y[t] + v[t] * sin(ψ[t]) * dt
+ψ_[t+1] = ψ[t] + v[t] / Lf * delta[t] * dt
+v_[t+1] = v[t] + a[t] * dt
+
+Lf measures the distance between the front of the vehicle and its center of gravity. 
+The larger the vehicle, the slower the turn rate.
+
+And I also use Cross Track Error (cte) and Orientation Error (epsi) as additional state.
+cte[t+1] = f(x[t]) - y[t] + v[t] * sin(epsi[t]) * dt
+epsi[t+1] = ψ[t] - psides[t] + v[t] * delta[t] / Lf * dt
 
 
 ### Timestep Length and Frequency
 
-Student discusses the reasoning behind the chosen N (timestep length) and dt (timestep frequency) values. Additionally the student details the previous values tried.
+N is the number of timesteps in the horizon. 
+dt is how much time elapses between actuations.
+And T is the product of two variables, N and dt.
 
+The goal of Model Predictive Control is to optimize the control inputs: [δ,a]. 
+An optimizer will tune these inputs until a low cost vector of control inputs is found. 
+However, the environment will change enough that it won't make sense to predict any further into the future.
+
+Larger values of dt result in less frequent actuations, which makes it harder to accurately approximate a continuous reference trajectory. 
+
+Based on above rules, I choose N = 25 and dt = 0.05 at the beginning.
+However, large N is not necessary and too many vector will lead the optimizer to bad result.
+I decrease N from 25 to 15 and keep dt = 0.05 as my final choice.
 
 
 ### Polynomial Fitting and MPC Preprocessing
 
-A polynomial is fitted to waypoints.
+Polynomial Fitting:
+First, I transformed from map coordinate into the vehicle coordinate system.
+And then, I fitted the transformed waypoints with third polynomial.
 
-If the student preprocesses waypoints, the vehicle state, and/or actuators prior to the MPC procedure it is described.
+MPC Preprocessing:
+For the initial vector, the initial vehicle position, orientation is zero because it's on vehicle coordinate system.
+And I used the fitted polynomial with x=0, y=0 to find initial Cross Track Error, Orientation Error.
 
 
 
 ### Model Predictive Control with Latency
 
-The student implements Model Predictive Control that handles a 100 millisecond latency. Student provides details on how they deal with latency.
+In a real car, an actuation command won't execute instantly - there will be a delay as the command propagates through the system. A realistic delay might be on the order of 100 milliseconds.
+
+This is a problem called "latency", and it's a difficult challenge for some controllers to overcome. But a Model Predictive Controller can adapt quite well because we can model this latency in the system.
+
+In the main.cpp.
+We using 100 millisecond latency.     
+```
+this_thread::sleep_for(chrono::milliseconds(100));
+```
+It means MPC solver is try to optimize the data is 100ms earlier.
+
+To solve this issue, we can predict the state after 100ms as the input state for the solver.
+For example, x = 0 + v * latency for the state after 100ms.
 
 
 
