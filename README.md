@@ -9,6 +9,12 @@ Self-Driving Car Engineer Nanodegree Program
 
 ![alt text][image1]
 
+## Video Demo
+
+Here is the MPC ran on [Udacity simulator](https://github.com/udacity/self-driving-car-sim/releases) with 800x600 screen resolution and good graphics quality with 50 MPH.
+
+[Demo Link](https://youtu.be/0U6WFtklg9Y)
+
 ## Implementation
 
 ### The Model

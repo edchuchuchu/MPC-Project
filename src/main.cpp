@@ -128,7 +128,9 @@ int main() {
           double epsi = - atan(coeffs[1]);
 
           Eigen::VectorXd state(6);
-          state << 0, 0, 0, v, cte, epsi;
+          // Initial state of px, py ,psi is 0;
+          // Using the state after 100ms to handle 100ms latency: px = px + v * 0.1 (s)
+          state << v * 0.1 , 0, 0, v, cte, epsi;
 
           auto vars = mpc.Solve(state, coeffs, mpc_x_vals, mpc_y_vals);
           steer_value = - vars[0];
